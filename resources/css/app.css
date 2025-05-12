@@ -1,0 +1,130 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 10px;
+  font-size: 10px;
+}
+
+.container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border: 1px solid #000;
+  padding: 10px;
+  box-sizing: border-box;
+  page-break-inside: avoid;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.header .left,
+.header .right {
+  width: 48%;
+}
+
+.header .left {
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.header .right {
+  font-size: 10px;
+  text-align: right;
+  line-height: 1.2;
+}
+
+.title {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.section {
+  margin-bottom: 10px;
+}
+
+.header p,
+.section p {
+  margin: 0;
+}
+
+.section h3 {
+  margin: 0;
+  font-size: 12px;
+  background-color: #f4f4f4;
+  padding: 3px;
+  border: 1px solid #ddd;
+  line-height: 1.2;
+}
+
+.section table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 3px;
+}
+
+.section table th,
+.section table td {
+  padding: 3px;
+  vertical-align: top;
+  text-align: left;
+  line-height: 1.2;
+  border: 1px solid #ddd;
+}
+
+.section table th {
+  width: 40%;
+}
+
+.section table td {
+  width: 60%;
+}
+
+.footer {
+  font-size: 8px;
+  text-align: right;
+}
+
+.break {
+  margin-top: 20px;
+  border-top: 1px dashed #000;
+  padding-top: 10px;
+}
+
+.signature-section {
+  margin-top: 20px;
+}
+
+.signature-section .signatures {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.signature-section .signatures .signature-box {
+  width: 48%;
+  text-align: center;
+  border-top: 1px solid #000;
+  padding-top: 5px;
+  font-size: 10px;
+}
+
+.terms-box {
+  font-size: 10px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.terms-box h3 {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
