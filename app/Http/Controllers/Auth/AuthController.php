@@ -27,7 +27,7 @@ class AuthController extends Controller
             'status' => UserStatus::ACTIVE,
         ]);
 
-        return response()->json(['message' => 'User registered successfully'], 201);
+        return response()->json(['message' => 'Usuário criado com sucesso'], 201);
     }
 
     public function login(Request $request)
@@ -40,7 +40,7 @@ class AuthController extends Controller
         $user = User::where('email', $data['email'])->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
-            return response()->json(['error' => 'The provided credentials are incorrect.'], 401);
+            return response()->json(['error' => 'As credenciais estão incorretas'], 401);
         }
 
         $token = $user->createToken('login')->plainTextToken;
@@ -52,12 +52,17 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return response()->json(['message' => 'Logado com sucesso']);
     }
 
     public function user(Request $request)
     {
-        return response()->json($request->user()->load('organizations', 'organizations.phones'));
+        return response()->json($request->user());
+    }
+
+    public function check(Request $request)
+    {
+        return response()->json(['message' => 'Autenticado']);
     }
 
     public function forgotPassword(Request $request)

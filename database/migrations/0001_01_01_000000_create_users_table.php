@@ -19,6 +19,9 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('document')->nullable();
 
+            $table->date('dob')->nullable();
+            $table->string('avatar')->nullable();
+
             $table->json('preferences')->nullable();
 
             $table->string('status')->default('Ativo');

@@ -17,7 +17,7 @@ class UserRootSeeder extends Seeder
             'id' => '01JB84AKV7MZ9J5AB80RJEVDXT',
             'name' => 'Root User',
             'email' => 'root@root.com',
-            'password' => bcrypt('root'),
+            'password' => bcrypt('root123456'),
             'status' => UserStatus::ACTIVE,
         ]);
 
