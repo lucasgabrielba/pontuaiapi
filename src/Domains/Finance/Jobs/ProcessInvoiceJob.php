@@ -40,12 +40,12 @@ class ProcessInvoiceJob implements ShouldQueue
             $invoice = Invoice::findOrFail($this->invoiceId);
             
             // Verifica se o arquivo existe
-            if (!Storage::disk('public')->exists($this->filePath)) {
+            if (!Storage::disk('s3')->exists($this->filePath)) {
                 throw new HttpException(404, 'Arquivo da fatura não encontrado');
             }
             
             // Recupera o conteúdo do arquivo para enviar para processamento
-            $fileContent = Storage::disk('public')->get($this->filePath);
+            $fileContent = Storage::disk('s3')->get($this->filePath);
             $fileExtension = pathinfo($this->filePath, PATHINFO_EXTENSION);
             
             // Aqui você enviaria o arquivo para um serviço de IA para processamento

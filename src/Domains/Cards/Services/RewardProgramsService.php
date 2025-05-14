@@ -81,7 +81,7 @@ class RewardProgramsService
      */
     private function uploadLogo($logo): string
     {
-        $path = $logo->store('reward-programs', 'public');
+        $path = $logo->store('reward-programs', 's3');
         return $path;
     }
     

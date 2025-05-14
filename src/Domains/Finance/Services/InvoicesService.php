@@ -150,7 +150,7 @@ class InvoicesService
     {
         $extension = $file->getClientOriginalExtension();
         $fileName = Str::ulid() . '.' . $extension;
-        $path = $file->storeAs('invoices', $fileName, 'public');
+        $path = $file->storeAs('invoices', $fileName, 's3');
         
         return $path;
     }

@@ -14,14 +14,14 @@ class MockAIProcessorService implements InvoiceProcessorInterface
     public function processInvoice(string $filePath, string $fileType): array
     {
         // Verificar se o arquivo existe
-        if (!Storage::disk('public')->exists($filePath)) {
+        if (!Storage::disk('s3')->exists($filePath)) {
             throw new HttpException(404, 'Arquivo não encontrado');
         }
         
         // Processar de acordo com o tipo de arquivo
         if ($fileType === 'csv') {
             // Lê o conteúdo do CSV
-            $content = Storage::disk('public')->get($filePath);
+            $content = Storage::disk('s3')->get($filePath);
             return $this->processCsvContent($content);
         } else {
             // Simula extração de dados para arquivos binários (PDF, imagens)
