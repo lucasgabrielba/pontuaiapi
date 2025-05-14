@@ -2,6 +2,9 @@
 
 namespace Domains\Users\Models;
 
+use Domains\Cards\Models\Card;
+use Domains\Finance\Models\Invoice;
+use Domains\Rewards\Models\Point;
 use Domains\Users\Enums\UserStatus;
 use Domains\Shared\Traits\FiltersNullValues;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -45,5 +48,21 @@ class User extends Authenticatable
         'status' => UserStatus::class,
         'preferences' => 'array',
     ];
+
+
+    public function cards()
+    {
+        return $this->hasMany(Card::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function points()
+    {
+        return $this->hasMany(Point::class);
+    }
 
 }
