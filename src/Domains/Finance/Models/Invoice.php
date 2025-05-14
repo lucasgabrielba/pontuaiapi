@@ -3,14 +3,16 @@
 namespace Domains\Finance\Models;
 
 use Domains\Cards\Models\Card;
+use Domains\Shared\Traits\FiltersNullValues;
 use Domains\Users\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Invoice extends Model
 {
-  use HasFactory, HasUlids;
+  use FiltersNullValues, HasFactory, HasUlids, SoftDeletes;
 
   protected $fillable = [
     'user_id',

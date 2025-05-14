@@ -4,41 +4,56 @@ namespace Domains\Rewards\Models;
 
 use Domains\Cards\Models\RewardProgram;
 use Domains\Finance\Models\Transaction;
+use Domains\Shared\Traits\FiltersNullValues;
 use Domains\Users\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Point extends Model
 {
-  use HasFactory, HasUlids;
+    use FiltersNullValues, HasFactory, HasUlids, SoftDeletes;
 
-  protected $fillable = [
-    'user_id',
-    'reward_program_id',
-    'transaction_id',
-    'amount',
-    'expiration_date',
-    'status',
-    'description',
-  ];
+    public $incrementing = false;
+    protected $keyType = 'string';
 
-  protected $casts = [
-    'expiration_date' => 'date',
-  ];
+    protected $fillable = [
+        'user_id',
+        'reward_program_id',
+        'transaction_id',
+        'amount',
+        'expiration_date',
+        'status',
+        'description',
+    ];
 
-  public function user()
-  {
-    return $this->belongsTo(User::class);
-  }
+    protected $casts = [
+        'amount' => 'integer',
+        'expiration_date' => 'date',
+    ];
 
-  public function rewardProgram()
-  {
-    return $this->belongsTo(RewardProgram::class);
-  }
+    /**
+     * Get the user that owns the points.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 
-  public function transaction()
-  {
-    return $this->belongsTo(Transaction::class);
-  }
+    /**
+     * Get the reward program associated with the points.
+     */
+    public function rewardProgram()
+    {
+        return $this->belongsTo(RewardProgram::class);
+    }
+
+    /**
+     * Get the transaction that generated the points.
+     */
+    public function transaction()
+    {
+        return $this->belongsTo(Transaction::class);
+    }
 }
