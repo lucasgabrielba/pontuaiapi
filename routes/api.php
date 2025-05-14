@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Cards\CardsController;
 use App\Http\Controllers\Cards\RewardProgramsController;
+use App\Http\Controllers\Finance\AnalysisController;
 use App\Http\Controllers\Finance\CategoriesController;
 use App\Http\Controllers\Finance\InvoicesController;
 use App\Http\Controllers\Finance\TransactionsController;
