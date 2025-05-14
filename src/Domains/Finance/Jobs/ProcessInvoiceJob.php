@@ -1,6 +1,6 @@
 <?php
 
-namespace Domains\Finance\Models;
+namespace Domains\Finance\Jobs;
 
 use Domains\Finance\Models\Invoice;
 use Domains\Finance\Models\Transaction;
