@@ -36,8 +36,9 @@ class UploadInvoiceRequest extends FormRequest
             'invoice_file.file' => 'O arquivo enviado deve ser um arquivo válido.',
             'invoice_file.mimes' => 'O arquivo deve ser um PDF, JPG, PNG ou CSV.',
             'invoice_file.max' => 'O tamanho máximo do arquivo é 10MB.',
-            'card_id.required' => 'É necessário informar o cartão relacionado à fatura.',
+            'card_id.required' => 'O ID do cartão é obrigatório.',
             'card_id.exists' => 'O cartão informado não existe.',
+            'card_name.string' => 'O nome do cartão deve ser uma string.',
             'reference_date.date' => 'A data de referência deve ser uma data válida.',
         ];
     }

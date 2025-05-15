@@ -27,7 +27,7 @@ class StoreCardRequest extends FormRequest
             'annual_fee' => 'sometimes|nullable|numeric|min:0',
             'active' => 'sometimes|boolean',
             'reward_programs' => 'sometimes|array',
-            'reward_programs.*.reward_program_id' => 'required|string|exists:reward_programs,id',
+            'reward_programs.*.reward_program_id' => 'sometimes|string|exists:reward_programs,id',
             'reward_programs.*.conversion_rate' => 'sometimes|numeric|min:0',
             'reward_programs.*.is_primary' => 'sometimes|boolean',
             'reward_programs.*.terms' => 'sometimes|nullable|string',

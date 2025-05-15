@@ -17,9 +17,6 @@ class CardsController extends Controller
         $this->cardsService = $cardsService;
     }
 
-    /**
-     * Display a listing of the cards.
-     */
     public function index(Request $request)
     {
         $filters = $request->all();
@@ -28,9 +25,6 @@ class CardsController extends Controller
         return response()->json($cards);
     }
 
-    /**
-     * Store a newly created card in storage.
-     */
     public function store(StoreCardRequest $request)
     {
         $data = $request->validated();
@@ -39,9 +33,6 @@ class CardsController extends Controller
         return response()->json($card, 201);
     }
 
-    /**
-     * Display the specified card.
-     */
     public function show(string $cardId)
     {
         $card = $this->cardsService->get($cardId);
@@ -49,9 +40,6 @@ class CardsController extends Controller
         return response()->json($card);
     }
 
-    /**
-     * Update the specified card in storage.
-     */
     public function update(UpdateCardRequest $request, string $cardId)
     {
         $data = $request->validated();
@@ -62,9 +50,6 @@ class CardsController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified card from storage.
-     */
     public function destroy(string $cardId)
     {
         $this->cardsService->destroy($cardId);
@@ -74,9 +59,6 @@ class CardsController extends Controller
         ], 204);
     }
 
-    /**
-     * Get all invoices for a specific card.
-     */
     public function invoices(string $cardId)
     {
         $invoices = $this->cardsService->getInvoices($cardId);
