@@ -7,6 +7,7 @@ use Domains\Finance\Models\Invoice;
 use Domains\Rewards\Models\Point;
 use Domains\Users\Enums\UserStatus;
 use Domains\Shared\Traits\FiltersNullValues;
+use Domains\Users\Traits\HasFiles;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -23,6 +24,7 @@ class User extends Authenticatable
         HasRoles,
         HasUlids,
         Notifiable,
+        HasFiles,
         SoftDeletes;
 
     protected $guard_name = 'api';

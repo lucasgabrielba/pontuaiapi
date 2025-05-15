@@ -136,21 +136,4 @@ return [
 
     'admin_email' => env('ADMIN_EMAIL', 'root@root.com'),
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Integrations
-    |--------------------------------------------------------------------------
-    |
-    | This value is the integrations of the application, which will be used when the
-    | framework needs to place the integrations in a notification or
-    | other UI elements where an integrations needs to be displayed.
-    |
-    */
-
-    'whatsapp' => [
-        'url' => env('WHATSAPP_API_URL'),
-        'api_key' => env('WHATSAPP_API_KEY'),
-        'instance' => env('WHATSAPP_INSTANCE'),
-    ],
 ];
