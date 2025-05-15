@@ -72,4 +72,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/spending-patterns', [AnalysisController::class, 'spendingPatterns']);
         Route::get('/points-summary', [AnalysisController::class, 'pointsSummary']);
     });
+
+    // Dashboard
+    Route::prefix('dashboard')->group(function () {
+        Route::get('/', [App\Http\Controllers\Dashboard\DashboardController::class, 'index']);
+        Route::get('/stats', [App\Http\Controllers\Dashboard\DashboardController::class, 'getStats']);
+        Route::get('/transactions', [App\Http\Controllers\Dashboard\DashboardController::class, 'getTransactions']);
+        Route::get('/points-programs', [App\Http\Controllers\Dashboard\DashboardController::class, 'getPointsPrograms']);
+        Route::get('/points-by-category', [App\Http\Controllers\Dashboard\DashboardController::class, 'getPointsByCategory']);
+        Route::get('/monthly-spent', [App\Http\Controllers\Dashboard\DashboardController::class, 'getMonthlySpent']);
+        Route::get('/recommendations', [App\Http\Controllers\Dashboard\DashboardController::class, 'getRecommendations']);
+    });
 });
