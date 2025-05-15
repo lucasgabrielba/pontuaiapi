@@ -18,6 +18,11 @@ class CardsService
         return $helper->list($filters);
     }
 
+    public function hasCards(): bool
+    {
+        return Card::where('user_id', auth()->id())->exists();
+    }
+
     public function get(string $cardId): Card
     {
         return Card::where([

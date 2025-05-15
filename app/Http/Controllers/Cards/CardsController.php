@@ -25,6 +25,13 @@ class CardsController extends Controller
         return response()->json($cards);
     }
 
+    public function hasCards()
+    {
+        $hasCards = $this->cardsService->hasCards();
+
+        return response()->json($hasCards);
+    }
+
     public function store(StoreCardRequest $request)
     {
         $data = $request->validated();
