@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'openai' => [
+        'key' => env('OPENAI_API_KEY'),
+        'vision_model' => env('OPENAI_VISION_MODEL', 'gpt-4o'),
+        'document_model' => env('OPENAI_DOCUMENT_MODEL', 'gpt-4-turbo'),
+        'pdf_processor_url' => env('OPENAI_PDF_PROCESSOR_URL', 'https://api.example.com/process-pdf'),
+    ],
+    
 ];

@@ -4,7 +4,7 @@ namespace App\Providers;
 
 use Domains\Finance\Contracts\InvoiceProcessorInterface;
 use Domains\Finance\Services\AnalysisService;
-use Domains\Finance\Services\MockAIProcessorService;
+use Domains\Finance\Services\OpenAIProcessorService;
 use Illuminate\Support\ServiceProvider;
 
 class AIServiceProvider extends ServiceProvider
@@ -15,7 +15,9 @@ class AIServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(InvoiceProcessorInterface::class, function ($app) {
-            return new MockAIProcessorService();
+            if (config('services.openai.key')) {
+                return new OpenAIProcessorService();
+            }
         });
         
         $this->app->singleton(AnalysisService::class, function ($app) {

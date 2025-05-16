@@ -2,9 +2,10 @@
 
 namespace Domains\Finance\Jobs;
 
+use Domains\Finance\Contracts\InvoiceProcessorInterface;
 use Domains\Finance\Models\Invoice;
 use Domains\Finance\Models\Transaction;
-use Domains\Finance\Services\MockAIProcessorService;
+use Domains\Finance\Models\Category;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -28,32 +29,47 @@ class ProcessInvoiceJob implements ShouldQueue
     {
         $this->invoiceId = $invoiceId;
         $this->filePath = $filePath;
+        Log::info('Job ProcessInvoiceJob criado', [
+            'invoice_id' => $invoiceId,
+            'file_path' => $filePath
+        ]);
     }
 
     /**
      * Execute the job.
      */
-    public function handle()
+    public function handle(InvoiceProcessorInterface $invoiceProcessor)
     {
+        Log::info('Iniciando processamento da fatura', [
+            'invoice_id' => $this->invoiceId,
+            'file_path' => $this->filePath
+        ]);
+        
         try {
-            // Recupera a fatura
             $invoice = Invoice::findOrFail($this->invoiceId);
+            Log::debug('Fatura encontrada', ['invoice' => $invoice->toArray()]);
             
-            // Verifica se o arquivo existe
             if (!Storage::disk('s3')->exists($this->filePath)) {
+                Log::error('Arquivo da fatura não encontrado', [
+                    'file_path' => $this->filePath
+                ]);
                 throw new HttpException(404, 'Arquivo da fatura não encontrado');
             }
             
-            // Recupera o conteúdo do arquivo para enviar para processamento
-            $fileContent = Storage::disk('s3')->get($this->filePath);
             $fileExtension = pathinfo($this->filePath, PATHINFO_EXTENSION);
+            Log::debug('Tipo de arquivo identificado', ['extension' => $fileExtension]);
             
-            // Aqui você enviaria o arquivo para um serviço de IA para processamento
-            // Por enquanto, vamos simular o resultado do processamento baseado no tipo de arquivo
-            $transactions = $this->processWithAI($fileContent, $fileExtension, $invoice);
+            Log::info('Iniciando processamento do arquivo com processador', [
+                'processor' => get_class($invoiceProcessor),
+                'file_extension' => $fileExtension
+            ]);
+            $transactions = $invoiceProcessor->processInvoice($this->filePath, $fileExtension);
+            Log::info('Arquivo processado com sucesso', [
+                'transaction_count' => count($transactions)
+            ]);
             
-            // Atualiza a fatura com os dados processados
             $totalAmount = collect($transactions)->sum('amount');
+            Log::debug('Valor total calculado', ['total_amount' => $totalAmount]);
             
             $invoice->update([
                 'total_amount' => $totalAmount,
@@ -61,17 +77,51 @@ class ProcessInvoiceJob implements ShouldQueue
                 'due_date' => now()->addDays(15), // Simula uma data de vencimento
                 'closing_date' => now()->subDays(5), // Simula uma data de fechamento
             ]);
+            Log::info('Fatura atualizada com sucesso', [
+                'invoice_id' => $invoice->id,
+                'total_amount' => $totalAmount,
+                'status' => 'Pendente'
+            ]);
             
             // Cria as transações na base de dados
-            foreach ($transactions as $transaction) {
-                Transaction::create([
+            Log::debug('Iniciando criação das transações na base de dados');
+            foreach ($transactions as $index => $transaction) {
+                // Se tiver category_code, procura a categoria
+                $categoryId = null;
+                if (isset($transaction['category_code'])) {
+                    $category = Category::where('code', $transaction['category_code'])->first();
+                    if ($category) {
+                        $categoryId = $category->id;
+                        Log::debug('Categoria encontrada', [
+                            'category_code' => $transaction['category_code'],
+                            'category_id' => $categoryId
+                        ]);
+                    } else {
+                        Log::warning('Categoria não encontrada', [
+                            'category_code' => $transaction['category_code']
+                        ]);
+                    }
+                    unset($transaction['category_code']);
+                }
+                
+                $points = $this->calculatePoints($transaction['amount'], $invoice);
+                
+                $newTransaction = Transaction::create([
                     'invoice_id' => $invoice->id,
                     'merchant_name' => $transaction['merchant_name'],
                     'transaction_date' => $transaction['transaction_date'],
                     'amount' => $transaction['amount'],
                     'description' => $transaction['description'] ?? null,
-                    'category_id' => $transaction['category_id'] ?? null,
-                    'points_earned' => $this->calculatePoints($transaction['amount'], $invoice),
+                    'category_id' => $categoryId,
+                    'points_earned' => $points,
+                ]);
+                
+                Log::debug('Transação criada', [
+                    'index' => $index + 1,
+                    'transaction_id' => $newTransaction->id,
+                    'merchant' => $transaction['merchant_name'],
+                    'amount' => $transaction['amount'],
+                    'points' => $points
                 ]);
             }
             
@@ -85,6 +135,8 @@ class ProcessInvoiceJob implements ShouldQueue
             Log::error('Erro ao processar fatura', [
                 'invoice_id' => $this->invoiceId,
                 'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
             
@@ -93,112 +145,12 @@ class ProcessInvoiceJob implements ShouldQueue
                 'status' => 'Erro'
             ]);
             
-            throw $e;
-        }
-    }
-    
-    /**
-     * Processa a fatura usando o serviço de IA
-     */
-    private function processWithAI(string $fileContent, string $fileExtension, Invoice $invoice): array
-    {
-        // Instancia o serviço de processamento (em produção seria injetado via DI)
-        $aiProcessor = new MockAIProcessorService();
-        
-        try {
-            // Processa o arquivo usando o serviço de IA
-            $transactions = $aiProcessor->processInvoice($this->filePath, $fileExtension);
-            
-            // Para cada transação, busca a categoria pelo código se disponível
-            foreach ($transactions as &$transaction) {
-                if (isset($transaction['category_code'])) {
-                    $category = \Domains\Finance\Models\Category::where('code', $transaction['category_code'])->first();
-                    if ($category) {
-                        $transaction['category_id'] = $category->id;
-                    }
-                    unset($transaction['category_code']);
-                }
-            }
-            
-            return $transactions;
-        } catch (\Exception $e) {
-            Log::error('Erro no processamento de IA', [
-                'invoice_id' => $invoice->id,
-                'error' => $e->getMessage()
+            Log::info('Status da fatura atualizado para Erro', [
+                'invoice_id' => $this->invoiceId
             ]);
             
-            // Fallback para simulação básica em caso de erro
-            if ($fileExtension === 'csv') {
-                return $this->processCsvContent($fileContent);
-            } elseif (in_array($fileExtension, ['pdf', 'jpg', 'jpeg', 'png'])) {
-                return $this->simulateAIResponse($invoice);
-            }
-            
-            throw new HttpException(400, 'Formato de arquivo não suportado para processamento');
+            throw $e;
         }
-    }
-    
-    /**
-     * Processa o conteúdo CSV para extrair transações
-     */
-    private function processCsvContent(string $content): array
-    {
-        $rows = array_map('str_getcsv', explode("\n", $content));
-        
-        // Remove a linha de cabeçalho
-        $header = array_shift($rows);
-        
-        $transactions = [];
-        
-        foreach ($rows as $row) {
-            if (count($row) >= 3) { // Validação básica
-                $transactions[] = [
-                    'merchant_name' => $row[0],
-                    'transaction_date' => date('Y-m-d', strtotime($row[1])),
-                    'amount' => (int)($row[2] * 100), // Converte para centavos
-                    'description' => $row[3] ?? null,
-                ];
-            }
-        }
-        
-        return $transactions;
-    }
-    
-    /**
-     * Simula o resultado de uma análise de IA para arquivos não-CSV
-     */
-    private function simulateAIResponse(Invoice $invoice): array
-    {
-        // Lista de estabelecimentos fictícios para simulação
-        $merchants = [
-            'Supermercado Extra' => ['category' => 'Supermercado', 'code' => 'SUPER'],
-            'Netflix' => ['category' => 'Streaming', 'code' => 'STREAM'],
-            'Amazon' => ['category' => 'Compras Online', 'code' => 'ECOMM'],
-            'Posto Ipiranga' => ['category' => 'Combustível', 'code' => 'FUEL'],
-            'Restaurante Outback' => ['category' => 'Restaurante', 'code' => 'RESTA'],
-            'Farmácia Droga Raia' => ['category' => 'Farmácia', 'code' => 'PHARM'],
-            'Uber' => ['category' => 'Transporte', 'code' => 'TRANS'],
-            'iFood' => ['category' => 'Delivery', 'code' => 'DELIV']
-        ];
-        
-        $transactions = [];
-        
-        // Gera de 5 a 10 transações aleatórias
-        $count = rand(5, 10);
-        for ($i = 0; $i < $count; $i++) {
-            $merchantName = array_rand($merchants);
-            $amount = rand(1000, 50000); // 10-500 reais em centavos
-            
-            $transactions[] = [
-                'merchant_name' => $merchantName,
-                'transaction_date' => now()->subDays(rand(1, 30))->format('Y-m-d'),
-                'amount' => $amount,
-                'description' => $merchants[$merchantName]['category'] . ' - Transação simulada',
-                'category_code' => $merchants[$merchantName]['code'],
-            ];
-        }
-        
-        return $transactions;
     }
     
     /**
@@ -212,6 +164,15 @@ class ProcessInvoiceJob implements ShouldQueue
         
         // Calcula pontos baseado na taxa de conversão do cartão
         // Exemplo: R$ 100 com taxa 1.5 = 150 pontos
-        return (int)(($amount / 100) * $conversionRate);
+        $points = (int)(($amount / 100) * $conversionRate);
+        
+        Log::debug('Pontos calculados', [
+            'amount' => $amount,
+            'conversion_rate' => $conversionRate,
+            'points' => $points,
+            'card_id' => $card->id ?? 'N/A'
+        ]);
+        
+        return $points;
     }
 }
