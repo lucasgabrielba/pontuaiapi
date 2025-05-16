@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Cards\CardsController;
 use App\Http\Controllers\Cards\RewardProgramsController;
 use App\Http\Controllers\Finance\AnalysisController;
+use App\Http\Controllers\Finance\BanksController;
 use App\Http\Controllers\Finance\CategoriesController;
 use App\Http\Controllers\Finance\InvoicesController;
 use App\Http\Controllers\Finance\TransactionsController;
@@ -44,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Cartões
     Route::get('/cards/has-cards', [CardsController::class, 'hasCards']);
+    Route::put('/cards/{card}/status', [CardsController::class, 'switchStatus']);
     Route::get('/cards/{card}/invoices', [CardsController::class, 'invoices']);
     Route::apiResource('cards', CardsController::class);
 
@@ -65,6 +67,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/categories/{category}/transactions', [CategoriesController::class, 'transactions']);
     Route::get('/categories/suggest', [CategoriesController::class, 'suggest']);
     Route::apiResource('categories', CategoriesController::class);
+
+    // Bancos
+    Route::apiResource('banks', BanksController::class);
 
     // Análise de dados
     Route::prefix('analysis')->group(function () {

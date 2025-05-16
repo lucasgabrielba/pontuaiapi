@@ -11,10 +11,12 @@ class CardsService
     public function list(array $filters): LengthAwarePaginator
     {
         $helper = new ListDataHelper(new Card);
-
-        // Ensure only user's cards are returned
         $filters['user_id'] = auth()->id();
-
+        
+        if (!isset($filters['order'])) {
+            $filters['order'] = '-created_at'; 
+        }
+        
         return $helper->list($filters);
     }
 
@@ -29,6 +31,18 @@ class CardsService
             'id' => $cardId,
             'user_id' => auth()->id()
         ])->with('rewardPrograms')->firstOrFail();
+    }
+
+    public function switchStatus(string $cardId, bool $isActive): Card
+    {
+        $card = Card::where([
+            'id' => $cardId,
+            'user_id' => auth()->id()
+        ])->firstOrFail();
+
+        $card->update(['active' => $isActive]);
+
+        return $card;
     }
 
 

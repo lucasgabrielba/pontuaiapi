@@ -32,6 +32,14 @@ class CardsController extends Controller
         return response()->json($hasCards);
     }
 
+    public function switchStatus(Request $request, string $cardId)
+    {
+        $isActive = $request->isActive;
+        $card = $this->cardsService->switchStatus($cardId, $isActive);
+
+        return response()->json($card);
+    }
+
     public function store(StoreCardRequest $request)
     {
         $data = $request->validated();
