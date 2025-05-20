@@ -19,12 +19,14 @@ class ProcessInvoiceJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    // Configurar timeout para 5 minutos (300 segundos)
+    public $timeout = 300;
+    public $tries = 3;
+    public $backoff = 10;
+
     protected string $invoiceId;
     protected string $filePath;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(string $invoiceId, string $filePath)
     {
         $this->invoiceId = $invoiceId;
@@ -35,9 +37,6 @@ class ProcessInvoiceJob implements ShouldQueue
         ]);
     }
 
-    /**
-     * Execute the job.
-     */
     public function handle(InvoiceProcessorInterface $invoiceProcessor)
     {
         Log::info('Iniciando processamento da fatura', [
@@ -73,14 +72,14 @@ class ProcessInvoiceJob implements ShouldQueue
             
             $invoice->update([
                 'total_amount' => $totalAmount,
-                'status' => 'Pendente',
+                'status' => 'Analisado',
                 'due_date' => now()->addDays(15), // Simula uma data de vencimento
                 'closing_date' => now()->subDays(5), // Simula uma data de fechamento
             ]);
             Log::info('Fatura atualizada com sucesso', [
                 'invoice_id' => $invoice->id,
                 'total_amount' => $totalAmount,
-                'status' => 'Pendente'
+                'status' => 'Analisado'
             ]);
             
             // Cria as transações na base de dados
@@ -153,9 +152,6 @@ class ProcessInvoiceJob implements ShouldQueue
         }
     }
     
-    /**
-     * Calcula os pontos ganhos em uma transação
-     */
     private function calculatePoints(int $amount, Invoice $invoice): int
     {
         // Recupera a taxa de conversão do cartão
@@ -174,5 +170,26 @@ class ProcessInvoiceJob implements ShouldQueue
         ]);
         
         return $points;
+    }
+    
+    public function failed(\Throwable $exception)
+    {
+        // Quando o job falhar definitivamente, o status da fatura é atualizado
+        try {
+            Invoice::where('id', $this->invoiceId)->update([
+                'status' => 'Erro',
+                'error_message' => substr($exception->getMessage(), 0, 255)
+            ]);
+            
+            Log::error('Job ProcessInvoiceJob falhou definitivamente', [
+                'invoice_id' => $this->invoiceId,
+                'error' => $exception->getMessage()
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao atualizar fatura após falha do job', [
+                'invoice_id' => $this->invoiceId,
+                'error' => $e->getMessage()
+            ]);
+        }
     }
 }

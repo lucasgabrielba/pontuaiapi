@@ -68,7 +68,6 @@ class DashboardService
     ];
   }
 
-
   public function getTransactions(): array
   {
     $userId = auth()->id();
@@ -80,7 +79,9 @@ class DashboardService
       ->select([
         'transactions.id',
         'transactions.merchant_name as merchant',
-        'categories.name as category',
+        'categories.name as category_name',
+        'categories.icon as category_icon',
+        'categories.color as category_color',
         'transactions.amount',
         'transactions.points_earned as points',
         'transactions.is_recommended'

@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             UserRootSeeder::class,
             RewardProgramSeeder::class,
             BankSeeder::class,
+            CategorySeeder::class,
         ]);
     }
 }
