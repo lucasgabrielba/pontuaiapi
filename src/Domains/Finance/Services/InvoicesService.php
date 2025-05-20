@@ -9,8 +9,8 @@ use Domains\Finance\Models\Transaction;
 use Domains\Shared\Helpers\ListDataHelper;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class InvoicesService
 {
@@ -36,10 +36,111 @@ class InvoicesService
         $invoice = Invoice::where([
             'id' => $invoiceId,
             'user_id' => auth()->id()
+        ])->with('card')->firstOrFail();
+
+        return $invoice;
+    }
+
+    public function getPaginatedTransactions(
+        string $invoiceId,
+        int $page = 1,
+        int $perPage = 15,
+        string $search = '',
+        string $sortField = 'transaction_date',
+        string $sortOrder = 'desc',
+        string $categoryFilter = 'all'
+    ) {
+        $invoice = Invoice::where([
+            'id' => $invoiceId,
+            'user_id' => auth()->id()
         ])->firstOrFail();
 
-        return $invoice->load('transactions');
+        $query = Transaction::with('category')
+            ->where('invoice_id', $invoiceId);
+
+        // Aplicar filtro de pesquisa
+        if (!empty($search)) {
+            $query->where(function ($q) use ($search) {
+                $q->where('merchant_name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('category', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        // Aplicar filtro de categoria
+        if ($categoryFilter !== 'all') {
+            if ($categoryFilter === 'uncategorized') {
+                $query->whereNull('category_id');
+            } else {
+                $query->whereHas('category', function ($q) use ($categoryFilter) {
+                    $q->where('id', $categoryFilter);
+                });
+            }
+        }
+
+        // Aplicar ordenação
+        $allowedSortFields = ['transaction_date', 'merchant_name', 'amount'];
+        $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'transaction_date';
+        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? $sortOrder : 'desc';
+
+        $query->orderBy($sortField, $sortOrder);
+
+        // Executar paginação
+        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
+
+        // Adicionar campos extras para cada transação
+        $transactions = $paginator->getCollection()->map(function ($transaction) {
+            // Adicionar ícone e cor da categoria (se existir)
+            if ($transaction->category) {
+                $transaction->category_icon = $transaction->category->icon;
+                $transaction->category_color = $transaction->category->color;
+            }
+            return $transaction;
+        });
+
+        // Substituir coleção original com a modificada
+        $paginator->setCollection($transactions);
+
+        return $paginator;
     }
+
+    public function getSummaryByCategory(string $invoiceId): array
+    {
+        $invoice = Invoice::where([
+            'id' => $invoiceId,
+            'user_id' => auth()->id()
+        ])->firstOrFail();
+
+        // Query para obter resumo por categoria
+        $summary = DB::table('transactions')
+            ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
+            ->select(
+                'categories.id',
+                'categories.name',
+                'categories.icon',
+                'categories.color',
+                DB::raw('SUM(transactions.amount) as total'),
+                DB::raw('COUNT(transactions.id) as count'),
+                DB::raw('SUM(transactions.points_earned) as points')
+            )
+            ->where('transactions.invoice_id', $invoiceId)
+            ->groupBy('categories.id', 'categories.name', 'categories.icon', 'categories.color')
+            ->get();
+
+        // Formatar dados para "Sem categoria" quando category_id é null
+        foreach ($summary as $index => $item) {
+            if ($item->id === null) {
+                $summary[$index]->name = 'Sem categoria';
+                $summary[$index]->icon = 'help-circle';
+                $summary[$index]->color = 'gray';
+            }
+        }
+
+        return $summary->toArray();
+    }
+
 
     public function create(array $data): Invoice
     {
@@ -103,22 +204,22 @@ class InvoicesService
             'id' => $cardId,
             'user_id' => $user->id
         ])->firstOrFail();
-        
+
         $user = auth()->user();
-        
+
         $path = $user->storeFile($file, 'invoices');
-        
+
         $invoice = Invoice::create([
             'user_id' => $user->id,
             'card_id' => $cardId,
             'reference_date' => now(),
-            'total_amount' => 0, 
+            'total_amount' => 0,
             'status' => 'Processando',
             'file_path' => $path,
         ]);
-        
+
         dispatch(new ProcessInvoiceJob($invoice->id, $path));
-        
+
         return [
             'invoice_id' => $invoice->id,
             'status' => 'processing'

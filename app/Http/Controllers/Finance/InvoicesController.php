@@ -42,11 +42,34 @@ class InvoicesController extends Controller
     /**
      * Display the specified invoice.
      */
-    public function show(string $invoiceId)
+    public function show(Request $request, string $invoiceId)
     {
-        $invoice = $this->invoicesService->get($invoiceId);
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 15);
+        $search = $request->input('search', '');
+        $sortField = $request->input('sort_field', 'transaction_date');
+        $sortOrder = $request->input('sort_order', 'desc');
+        $categoryFilter = $request->input('category_filter', 'all');
 
-        return response()->json($invoice);
+        $invoice = $this->invoicesService->get($invoiceId);
+        $transactions = $this->invoicesService->getPaginatedTransactions(
+            $invoiceId,
+            $page ?? 1,
+            $perPage ?? 15,
+            $search ?? '',
+            $sortField ?? 'transaction_date',
+            $sortOrder ?? 'desc',
+            $categoryFilter ?? 'all'
+        );
+
+        // Obtenha resumo por categoria para esta fatura
+        $summaryByCategory = $this->invoicesService->getSummaryByCategory($invoiceId);
+
+        return response()->json([
+            'invoice' => $invoice,
+            'transactions' => $transactions,
+            'summaryByCategory' => $summaryByCategory
+        ]);
     }
 
     /**
