@@ -55,7 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Faturas
     Route::post('/invoices/upload', [InvoicesController::class, 'upload']);
-    Route::get('/invoices/{invoice}/transactions', [InvoicesController::class, 'transactions']);
+    Route::get('/invoices/{invoice}/transactions', [InvoicesController::class, 'getTransactions']);
+    Route::get('/invoices/{invoice}/category-summary', [InvoicesController::class, 'getCategorySummary']);
     Route::apiResource('invoices', InvoicesController::class);
 
     // Transações

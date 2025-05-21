@@ -39,10 +39,13 @@ class InvoicesController extends Controller
         return response()->json($invoice, 201);
     }
 
-    /**
-     * Display the specified invoice.
-     */
-    public function show(Request $request, string $invoiceId)
+    public function show(string $invoiceId)
+    {
+        $invoice = $this->invoicesService->get($invoiceId);
+        return response()->json($invoice);
+    }
+
+    public function getTransactions(Request $request, string $invoiceId)
     {
         $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 15);
@@ -51,30 +54,25 @@ class InvoicesController extends Controller
         $sortOrder = $request->input('sort_order', 'desc');
         $categoryFilter = $request->input('category_filter', 'all');
 
-        $invoice = $this->invoicesService->get($invoiceId);
         $transactions = $this->invoicesService->getPaginatedTransactions(
             $invoiceId,
-            $page ?? 1,
-            $perPage ?? 15,
+            $page,
+            $perPage,
             $search ?? '',
-            $sortField ?? 'transaction_date',
-            $sortOrder ?? 'desc',
-            $categoryFilter ?? 'all'
+            $sortField,
+            $sortOrder,
+            $categoryFilter
         );
 
-        // Obtenha resumo por categoria para esta fatura
-        $summaryByCategory = $this->invoicesService->getSummaryByCategory($invoiceId);
-
-        return response()->json([
-            'invoice' => $invoice,
-            'transactions' => $transactions,
-            'summaryByCategory' => $summaryByCategory
-        ]);
+        return response()->json($transactions);
     }
 
-    /**
-     * Update the specified invoice in storage.
-     */
+    public function getCategorySummary(string $invoiceId)
+    {
+        $summaryByCategory = $this->invoicesService->getSummaryByCategory($invoiceId);
+        return response()->json($summaryByCategory);
+    }
+
     public function update(Request $request, string $invoiceId)
     {
         $data = $request->all();

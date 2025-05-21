@@ -54,55 +54,41 @@ class InvoicesService
             'id' => $invoiceId,
             'user_id' => auth()->id()
         ])->firstOrFail();
-
-        $query = Transaction::with('category')
-            ->where('invoice_id', $invoiceId);
-
-        // Aplicar filtro de pesquisa
+        
+        $transactionModel = new Transaction();
+        $listHelper = new ListDataHelper($transactionModel, $invoice);
+        
+        $filters = [
+            'page' => $page,
+            'per_page' => $perPage,
+            'include' => 'category',
+            'order' => ($sortOrder === 'desc' ? '-' : '') . $sortField,
+        ];
+        
         if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('merchant_name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
-                    ->orWhereHas('category', function ($q) use ($search) {
-                        $q->where('name', 'like', "%{$search}%");
-                    });
-            });
+            $filters['search'] = $search;
         }
-
-        // Aplicar filtro de categoria
+        
         if ($categoryFilter !== 'all') {
             if ($categoryFilter === 'uncategorized') {
-                $query->whereNull('category_id');
+                $filters['category_id'] = null;
             } else {
-                $query->whereHas('category', function ($q) use ($categoryFilter) {
-                    $q->where('id', $categoryFilter);
-                });
+                $filters['category_id'] = $categoryFilter;
             }
         }
-
-        // Aplicar ordenação
-        $allowedSortFields = ['transaction_date', 'merchant_name', 'amount'];
-        $sortField = in_array($sortField, $allowedSortFields) ? $sortField : 'transaction_date';
-        $sortOrder = in_array(strtolower($sortOrder), ['asc', 'desc']) ? $sortOrder : 'desc';
-
-        $query->orderBy($sortField, $sortOrder);
-
-        // Executar paginação
-        $paginator = $query->paginate($perPage, ['*'], 'page', $page);
-
-        // Adicionar campos extras para cada transação
+        
+        $paginator = $listHelper->list($filters);
+        
         $transactions = $paginator->getCollection()->map(function ($transaction) {
-            // Adicionar ícone e cor da categoria (se existir)
             if ($transaction->category) {
                 $transaction->category_icon = $transaction->category->icon;
                 $transaction->category_color = $transaction->category->color;
             }
             return $transaction;
         });
-
-        // Substituir coleção original com a modificada
+        
         $paginator->setCollection($transactions);
-
+        
         return $paginator;
     }
 
@@ -140,7 +126,6 @@ class InvoicesService
 
         return $summary->toArray();
     }
-
 
     public function create(array $data): Invoice
     {
@@ -226,95 +211,4 @@ class InvoicesService
         ];
     }
 
-    public function getTransactions(string $invoiceId): array
-    {
-        $invoice = Invoice::where([
-            'id' => $invoiceId,
-            'user_id' => auth()->id()
-        ])->firstOrFail();
-
-        return $invoice->transactions()->get()->toArray();
-    }
-
-    private function simulateProcessing(Invoice $invoice, UploadedFile $file): void
-    {
-        $extension = $file->getClientOriginalExtension();
-
-        // Very basic simulation based on file type
-        if ($extension === 'csv') {
-            $this->processCsvFile($invoice, $file);
-        } else {
-            // For PDF/images, we'd use OCR and AI in a real implementation
-            // For now, just create some dummy data
-            $this->createDummyTransactions($invoice);
-        }
-
-        // Update invoice status and total
-        $totalAmount = $invoice->transactions()->sum('amount');
-
-        $invoice->update([
-            'status' => 'Pendente',
-            'total_amount' => $totalAmount,
-            'due_date' => now()->addDays(15),
-            'closing_date' => now()->subDays(5),
-        ]);
-    }
-
-    private function processCsvFile(Invoice $invoice, UploadedFile $file): void
-    {
-        $path = $file->getRealPath();
-        $rows = array_map('str_getcsv', file($path));
-
-        // Assume first row is header
-        $header = array_shift($rows);
-
-        $totalAmount = 0;
-
-        foreach ($rows as $row) {
-            if (count($row) >= 3) { // Basic validation
-                $transaction = [
-                    'invoice_id' => $invoice->id,
-                    'merchant_name' => $row[0],
-                    'transaction_date' => date('Y-m-d', strtotime($row[1])),
-                    'amount' => (int) ($row[2] * 100), // Convert to cents
-                    'description' => $row[3] ?? null,
-                ];
-
-                Transaction::create($transaction);
-                $totalAmount += $transaction['amount'];
-            }
-        }
-    }
-
-    private function createDummyTransactions(Invoice $invoice): void
-    {
-        $merchants = [
-            'Supermercado Extra',
-            'Netflix',
-            'Amazon',
-            'Posto Ipiranga',
-            'Restaurante Outback',
-            'Farmácia Droga Raia',
-            'Uber',
-            'iFood'
-        ];
-
-        $totalAmount = 0;
-
-        // Create 5-10 random transactions
-        $count = rand(5, 10);
-        for ($i = 0; $i < $count; $i++) {
-            $amount = rand(1000, 50000); // 10-500 reais em centavos
-            $transaction = [
-                'invoice_id' => $invoice->id,
-                'merchant_name' => $merchants[array_rand($merchants)],
-                'transaction_date' => now()->subDays(rand(1, 30))->format('Y-m-d'),
-                'amount' => $amount,
-                'description' => 'Transação gerada automaticamente',
-            ];
-
-            Transaction::create($transaction);
-            $totalAmount += $amount;
-        }
-    }
 }
