@@ -74,9 +74,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Análise de dados
     Route::prefix('analysis')->group(function () {
-        Route::get('/cards-recommendation', [AnalysisController::class, 'cardsRecommendation']);
-        Route::get('/spending-patterns', [AnalysisController::class, 'spendingPatterns']);
-        Route::get('/points-summary', [AnalysisController::class, 'pointsSummary']);
+        Route::get('/cards-recommendation', [App\Http\Controllers\Finance\AnalysisController::class, 'cardsRecommendation']);
+        Route::get('/transaction-optimizations', [App\Http\Controllers\Finance\AnalysisController::class, 'transactionOptimizations']);
+        Route::get('/spending-patterns', [App\Http\Controllers\Finance\AnalysisController::class, 'spendingPatterns']);
+        Route::get('/points-summary', [App\Http\Controllers\Finance\AnalysisController::class, 'pointsSummary']);
     });
 
     // Dashboard
