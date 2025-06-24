@@ -8,11 +8,11 @@ use Exception;
 
 class UpdateUser
 {
-    public static function execute(string $userId, array $data): void
+    public static function execute(string $userId, array $data)
     {
         try {
-            User::where('id', $userId)->update($data);
-
+            $user = User::where('id', $userId)->update($data);
+            return $user;
         } catch (ModelNotFoundException $e) {
             throw new Exception('Usuário não encontrado');
         } catch (Exception $e) {

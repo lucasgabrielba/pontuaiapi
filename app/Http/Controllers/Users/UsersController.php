@@ -45,11 +45,9 @@ class UsersController extends Controller
     public function update(UpdateUserRequest $request, string $userId)
     {
         $data = $request->validated();
-        $this->usersService->update($userId, $data);
+        $response = $this->usersService->update($userId, $data);
 
-        return response()->json([
-            'message' => 'Usuário atualizado com sucesso',
-        ]);
+        return response()->json($response, 200);
     }
 
     public function destroy(string $userId)

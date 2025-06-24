@@ -31,8 +31,10 @@ class RolesAndPermissionsSeeder extends Seeder
             'admin' => $permissions,
             
             'super_admin' => $permissions,
-        ];
 
+            'client' => [],
+        ];
+        
         // Create permissions
         foreach ($permissions as $permission) {
             Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'api']);

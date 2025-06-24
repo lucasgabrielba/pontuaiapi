@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class DeleteUser
 {
-    public static function execute(string $organizationId, string $userId): void
+    public static function execute(string $userId): void
     {
         try {
             $user = User::findOrFail($userId);

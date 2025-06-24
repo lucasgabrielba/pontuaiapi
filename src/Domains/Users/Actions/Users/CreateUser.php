@@ -2,13 +2,12 @@
 
 namespace Domains\Users\Actions\Users;
 
-use Domains\Users\Events\Users\UserCreated;
 use Domains\Users\Models\User;
 use InvalidArgumentException;
 
 class CreateUser
 {
-    public static function execute(array $data, string $organizationId): User
+    public static function execute(array $data): User
     {
         self::authorize($data);
 
