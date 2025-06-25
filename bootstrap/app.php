@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\CorsMiddleware;
 use App\Http\Middleware\JsonResponseMiddleware;
 use Illuminate\Console\Scheduling\Schedule;
@@ -22,7 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
             JsonResponseMiddleware::class,
         ]);
         $middleware->api([
-            // 'throttle:api',
+            // 'throttle:api'
+        ]);
+        $middleware->alias([
+            'admin' => AdminMiddleware::class,
         ]);
     })->withExceptions(function (Exceptions $exceptions) {
         //
