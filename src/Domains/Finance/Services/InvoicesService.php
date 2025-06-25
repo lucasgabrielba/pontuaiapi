@@ -33,10 +33,13 @@ class InvoicesService
 
     public function get(string $invoiceId): Invoice
     {
-        $invoice = Invoice::where([
-            'id' => $invoiceId,
-            'user_id' => auth()->id()
-        ])->with('card')->firstOrFail();
+        $query = Invoice::query()->with('card');
+
+        if (!auth()->user()->hasRole(['admin', 'super_admin'])) {
+            $query->where('user_id', auth()->id());
+        }
+
+        $invoice = $query->where('id', $invoiceId)->firstOrFail();
 
         return $invoice;
     }
@@ -50,10 +53,13 @@ class InvoicesService
         string $sortOrder = 'desc',
         string $categoryFilter = 'all'
     ) {
-        $invoice = Invoice::where([
-            'id' => $invoiceId,
-            'user_id' => auth()->id()
-        ])->firstOrFail();
+        $invoice = Invoice::query()->with('card');
+        
+        if (!auth()->user()->hasRole(['admin', 'super_admin'])) {
+            $invoice->where('user_id', auth()->id());
+        }
+        
+        $invoice = $invoice->where('id', $invoiceId)->firstOrFail();
         
         $transactionModel = new Transaction();
         $listHelper = new ListDataHelper($transactionModel, $invoice);
@@ -94,10 +100,13 @@ class InvoicesService
 
     public function getSummaryByCategory(string $invoiceId): array
     {
-        $invoice = Invoice::where([
-            'id' => $invoiceId,
-            'user_id' => auth()->id()
-        ])->firstOrFail();
+        $invoice = Invoice::query()->with('card');
+        
+        if (!auth()->user()->hasRole(['admin', 'super_admin'])) {
+            $invoice->where('user_id', auth()->id());
+        }
+        
+        $invoice = $invoice->where('id', $invoiceId)->firstOrFail();
 
         // Query para obter resumo por categoria
         $summary = DB::table('transactions')

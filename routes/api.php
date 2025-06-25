@@ -95,81 +95,82 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Rotas administrativas (apenas para admins)
     Route::middleware(['admin'])->prefix('admin')->group(function () {
-        
+
         // Dashboard e estatísticas
         Route::get('/stats', [AdminController::class, 'getStats']);
         Route::get('/activities/recent', [AdminController::class, 'getRecentActivities']);
 
         // Faturas
         Route::prefix('invoices')->group(function () {
-            // Listagem e visualização de faturas (admin) - AdminInvoicesController
-            Route::get('/', [AdminInvoicesController::class, 'index']);
-            Route::get('/{invoice}', [AdminInvoicesController::class, 'show']);
-            Route::get('/{invoice}/transactions', [AdminInvoicesController::class, 'getTransactions']);
-            Route::get('/{invoice}/category-summary', [AdminInvoicesController::class, 'getCategorySummary']);
-            
-            // Gestão de sugestões - AdminInvoicesController
-            Route::get('/{invoice}/suggestions', [AdminInvoicesController::class, 'getSuggestions']);
-            Route::post('/{invoice}/suggestions', [AdminInvoicesController::class, 'createSuggestion']);
-            Route::put('/{invoice}/suggestions/{suggestion}', [AdminInvoicesController::class, 'updateSuggestion']);
-            Route::delete('/{invoice}/suggestions/{suggestion}', [AdminInvoicesController::class, 'deleteSuggestion']);
-            
-            // Ferramentas administrativas específicas - AdminInvoicesController
-            Route::post('/{invoice}/reprocess', [AdminInvoicesController::class, 'reprocessInvoice']);
-            Route::get('/{invoice}/export', [AdminInvoicesController::class, 'exportInvoice']);
-            Route::get('/{invoice}/logs', [AdminInvoicesController::class, 'getLogs']);
-            Route::post('/{invoice}/mark-problematic', [AdminInvoicesController::class, 'markAsProblematic']);
-            
-            // Rotas complementares do AdminController
-            Route::get('/pending', [AdminController::class, 'getPendingInvoices']);
-            Route::patch('/{invoice}/priority', [AdminController::class, 'prioritizeInvoice']);
+            // Usuários com faturas
+            Route::get('/users', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getUsers']);
+            Route::get('/users/{userId}/invoices', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getUserInvoices']);
+
+            // Detalhes de faturas
+            Route::get('/{invoiceId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceDetails']);
+            Route::get('/{invoiceId}/transactions', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceTransactions']);
+            Route::get('/{invoiceId}/category-summary', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceCategorySummary']);
+
+            // Ações administrativas
+            Route::post('/{invoiceId}/reprocess', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'reprocessInvoice']);
+            Route::patch('/{invoiceId}/status', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'updateInvoiceStatus']);
+            Route::delete('/{invoiceId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'deleteInvoice']);
+
+            // Sugestões
+            Route::get('/{invoiceId}/suggestions', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceSuggestions']);
+            Route::post('/{invoiceId}/suggestions', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'createSuggestion']);
+            Route::put('/{invoiceId}/suggestions/{suggestionId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'updateSuggestion']);
+            Route::delete('/{invoiceId}/suggestions/{suggestionId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'deleteSuggestion']);
+
+            // Estatísticas
+            Route::get('/stats', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoicesStats']);
         });
-        
+
         // Gestão de usuários
         Route::get('/users', [AdminController::class, 'getUsers']);
         Route::get('/users/{user}', [AdminController::class, 'getUserDetails']);
         Route::patch('/users/{user}/status', [AdminController::class, 'updateUserStatus']);
-        
+
         // Gestão de faturas
         Route::get('/invoices/pending', [AdminController::class, 'getPendingInvoices']);
         Route::post('/invoices/{invoice}/reprocess', [AdminController::class, 'reprocessInvoice']);
         Route::patch('/invoices/{invoice}/priority', [AdminController::class, 'prioritizeInvoice']);
-        
+
         // Sistema e saúde
         Route::get('/system/health', [AdminController::class, 'getSystemHealth']);
         Route::get('/system/logs', [AdminController::class, 'getSystemLogs']);
         Route::get('/queues/status', [AdminController::class, 'getQueueStatus']);
-        
+
         // Métricas e performance
         Route::get('/metrics/performance', [AdminController::class, 'getPerformanceMetrics']);
         Route::get('/ai/usage-report', [AdminController::class, 'getAIUsageReport']);
         Route::get('/errors/stats', [AdminController::class, 'getErrorStats']);
-        
+
         // Configurações do sistema
         Route::get('/settings', [AdminController::class, 'getSystemSettings']);
         Route::put('/settings', [AdminController::class, 'updateSystemSettings']);
-        
+
         // Backup e manutenção
         Route::post('/backup/initiate', [AdminController::class, 'initiateBackup']);
         Route::get('/backup/status', [AdminController::class, 'getBackupStatus']);
         Route::post('/cleanup', [AdminController::class, 'cleanupOldData']);
-        
+
         // Notificações administrativas
         Route::get('/notifications', [AdminController::class, 'getAdminNotifications']);
         Route::patch('/notifications/{notification}/read', [AdminController::class, 'markNotificationAsRead']);
-        
+
         // Relatórios
         Route::post('/reports/generate', [AdminController::class, 'generateReport']);
         Route::get('/reports/{report}/download', [AdminController::class, 'downloadReport']);
-        
+
         // Auditoria
         Route::get('/audit/logs', [AdminController::class, 'getAuditLogs']);
-        
+
         // Gestão de bancos (admin)
         Route::get('/banks', [AdminController::class, 'getBanksList']);
         Route::post('/banks', [AdminController::class, 'addBank']);
         Route::put('/banks/{bank}', [AdminController::class, 'updateBank']);
-        
+
         // Gestão de programas de recompensas (admin)
         Route::get('/reward-programs', [AdminController::class, 'getRewardProgramsList']);
         Route::post('/reward-programs', [AdminController::class, 'addRewardProgram']);

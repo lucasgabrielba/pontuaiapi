@@ -17,8 +17,11 @@ class TransactionsService
         
         // Ensure only user's transactions are returned by joining with invoices
         $transactions = Transaction::join('invoices', 'transactions.invoice_id', '=', 'invoices.id')
-            ->where('invoices.user_id', auth()->id())
             ->select('transactions.*');
+            
+        if (!auth()->user()->hasRole(['admin', 'super_admin'])) {
+            $transactions->where('invoices.user_id', auth()->id());
+        }
             
         // Apply additional filters if needed
         if (isset($filters['merchant_name'])) {
