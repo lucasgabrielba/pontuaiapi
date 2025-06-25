@@ -425,7 +425,7 @@ class OpenAIProcessorService implements InvoiceProcessorInterface
             $transaction = [
                 'merchant_name' => $merchantName,
                 'transaction_date' => $currentDate ?? date('Y-m-d'),
-                'amount' => $amount,
+                'amount' => abs($amount),
                 'description' => $merchantName,
                 'category_code' => $categoryCode,
             ];
@@ -433,7 +433,7 @@ class OpenAIProcessorService implements InvoiceProcessorInterface
             Log::debug('Transação extraída com heurística', [
                 'merchant' => $merchantName,
                 'date' => $transaction['transaction_date'],
-                'amount' => $amount,
+                'amount' => abs($amount),
                 'category' => $categoryCode
             ]);
 
@@ -1050,7 +1050,7 @@ class OpenAIProcessorService implements InvoiceProcessorInterface
                 Log::debug('Transação extraída', [
                     'index' => $index,
                     'merchant' => $transaction['merchant_name'] ?? 'N/A',
-                    'amount' => $transaction['amount'] ?? 0,
+                    'amount' => abs($transaction['amount'] ?? 0),
                     'date' => $transaction['transaction_date'] ?? 'N/A',
                     'category' => $transaction['category_code'] ?? 'N/A'
                 ]);
@@ -1122,7 +1122,7 @@ class OpenAIProcessorService implements InvoiceProcessorInterface
                     $transactions[] = [
                         'merchant_name' => $merchantName,
                         'transaction_date' => $date,
-                        'amount' => $amount,
+                        'amount' => abs($amount),
                         'description' => $row[3] ?? null,
                         'category_code' => $categoryCode,
                     ];
@@ -1131,7 +1131,7 @@ class OpenAIProcessorService implements InvoiceProcessorInterface
                         'index' => $index,
                         'merchant' => $merchantName,
                         'date' => $date,
-                        'amount' => $amount,
+                        'amount' => abs($amount),
                         'category' => $categoryCode
                     ]);
                 } else {

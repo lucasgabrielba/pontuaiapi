@@ -71,15 +71,13 @@ class ProcessInvoiceJob implements ShouldQueue
             Log::debug('Valor total calculado', ['total_amount' => $totalAmount]);
             
             $invoice->update([
-                'total_amount' => $totalAmount,
-                'status' => 'Analisado',
+                'total_amount' => abs($totalAmount),
                 'due_date' => now()->addDays(15), // Simula uma data de vencimento
                 'closing_date' => now()->subDays(5), // Simula uma data de fechamento
             ]);
             Log::info('Fatura atualizada com sucesso', [
                 'invoice_id' => $invoice->id,
-                'total_amount' => $totalAmount,
-                'status' => 'Analisado'
+                'total_amount' => abs($totalAmount),
             ]);
             
             // Cria as transações na base de dados
@@ -109,7 +107,7 @@ class ProcessInvoiceJob implements ShouldQueue
                     'invoice_id' => $invoice->id,
                     'merchant_name' => $transaction['merchant_name'],
                     'transaction_date' => $transaction['transaction_date'],
-                    'amount' => $transaction['amount'],
+                    'amount' => abs($transaction['amount']),
                     'description' => $transaction['description'] ?? null,
                     'category_id' => $categoryId,
                     'points_earned' => $points,
@@ -119,7 +117,7 @@ class ProcessInvoiceJob implements ShouldQueue
                     'index' => $index + 1,
                     'transaction_id' => $newTransaction->id,
                     'merchant' => $transaction['merchant_name'],
-                    'amount' => $transaction['amount'],
+                    'amount' => abs($transaction['amount']),
                     'points' => $points
                 ]);
             }
@@ -163,13 +161,13 @@ class ProcessInvoiceJob implements ShouldQueue
         $points = (int)(($amount / 100) * $conversionRate);
         
         Log::debug('Pontos calculados', [
-            'amount' => $amount,
+            'amount' => abs($amount),
             'conversion_rate' => $conversionRate,
-            'points' => $points,
+            'points' => abs($points),
             'card_id' => $card->id ?? 'N/A'
         ]);
         
-        return $points;
+        return abs($points);
     }
     
     public function failed(\Throwable $exception)

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\AdminInvoicesController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Cards\CardsController;
 use App\Http\Controllers\Cards\RewardProgramsController;
@@ -98,6 +99,31 @@ Route::middleware('auth:sanctum')->group(function () {
         // Dashboard e estatísticas
         Route::get('/stats', [AdminController::class, 'getStats']);
         Route::get('/activities/recent', [AdminController::class, 'getRecentActivities']);
+
+        // Faturas
+        Route::prefix('invoices')->group(function () {
+            // Listagem e visualização de faturas (admin) - AdminInvoicesController
+            Route::get('/', [AdminInvoicesController::class, 'index']);
+            Route::get('/{invoice}', [AdminInvoicesController::class, 'show']);
+            Route::get('/{invoice}/transactions', [AdminInvoicesController::class, 'getTransactions']);
+            Route::get('/{invoice}/category-summary', [AdminInvoicesController::class, 'getCategorySummary']);
+            
+            // Gestão de sugestões - AdminInvoicesController
+            Route::get('/{invoice}/suggestions', [AdminInvoicesController::class, 'getSuggestions']);
+            Route::post('/{invoice}/suggestions', [AdminInvoicesController::class, 'createSuggestion']);
+            Route::put('/{invoice}/suggestions/{suggestion}', [AdminInvoicesController::class, 'updateSuggestion']);
+            Route::delete('/{invoice}/suggestions/{suggestion}', [AdminInvoicesController::class, 'deleteSuggestion']);
+            
+            // Ferramentas administrativas específicas - AdminInvoicesController
+            Route::post('/{invoice}/reprocess', [AdminInvoicesController::class, 'reprocessInvoice']);
+            Route::get('/{invoice}/export', [AdminInvoicesController::class, 'exportInvoice']);
+            Route::get('/{invoice}/logs', [AdminInvoicesController::class, 'getLogs']);
+            Route::post('/{invoice}/mark-problematic', [AdminInvoicesController::class, 'markAsProblematic']);
+            
+            // Rotas complementares do AdminController
+            Route::get('/pending', [AdminController::class, 'getPendingInvoices']);
+            Route::patch('/{invoice}/priority', [AdminController::class, 'prioritizeInvoice']);
+        });
         
         // Gestão de usuários
         Route::get('/users', [AdminController::class, 'getUsers']);
