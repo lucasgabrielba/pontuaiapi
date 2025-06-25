@@ -22,8 +22,8 @@ class CreateUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'password_confirmation' => 'required|string|min:8|same:password',
+            'password' => 'required|string|min:6',
+            'password_confirmation' => 'required|string|min:6|same:password',
             'role' => 'required|string|exists:roles,name',
         ];
     }
@@ -39,9 +39,9 @@ class CreateUserRequest extends FormRequest
             'email.email' => 'O e-mail deve ser um endereço de e-mail válido.',
             'email.unique' => 'Este e-mail já está sendo usado.',
             'password.required' => 'A senha é obrigatória.',
-            'password.min' => 'A senha deve ter pelo menos 8 caracteres.',
+            'password.min' => 'A senha deve ter pelo menos 6 caracteres.',
             'password_confirmation.required' => 'A confirmação de senha é obrigatória.',
-            'password_confirmation.min' => 'A confirmação de senha deve ter pelo menos 8 caracteres.',
+            'password_confirmation.min' => 'A confirmação de senha deve ter pelo menos 6 caracteres.',
             'password_confirmation.same' => 'A confirmação de senha não corresponde à senha.',
         ];
     }

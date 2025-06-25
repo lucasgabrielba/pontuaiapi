@@ -24,8 +24,8 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,'.$userId,
-            'password' => 'sometimes|nullable|string|min:8|confirmed',
-            'password_confirmation' => 'sometimes|string|min:8|same:password',
+            'password' => 'sometimes|nullable|string|min:6|confirmed',
+            'password_confirmation' => 'sometimes|string|min:6|same:password',
             'status' => 'sometimes|string|in:Ativo,Inativo',
         ];
     }
@@ -40,8 +40,8 @@ class UpdateUserRequest extends FormRequest
             'name.max' => 'O nome deve ter no máximo 255 caracteres.',
             'email.email' => 'O e-mail deve ser um endereço de e-mail válido.',
             'email.unique' => 'Este e-mail já está sendo usado.',
-            'password.min' => 'A senha deve ter pelo menos 8 caracteres.',
-            'password_confirmation.min' => 'A confirmação de senha deve ter pelo menos 8 caracteres.',
+            'password.min' => 'A senha deve ter pelo menos 6 caracteres.',
+            'password_confirmation.min' => 'A confirmação de senha deve ter pelo menos 6 caracteres.',
             'password.same' => 'A senha e a confirmação de senha devem ser iguais.',
             'status.in' => 'O status deve ser Ativo ou Inativo.',
         ];

@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Finance\StoreInvoiceRequest;
 use App\Http\Requests\Finance\UploadInvoiceRequest;
 use Domains\Finance\Services\InvoicesService;
+use Domains\Finance\Services\SuggestionsService;
 use Illuminate\Http\Request;
 
 class InvoicesController extends Controller
 {
     protected InvoicesService $invoicesService;
-
-    public function __construct(InvoicesService $invoicesService)
+    protected SuggestionsService $suggestionsService;
+    
+    public function __construct(InvoicesService $invoicesService, SuggestionsService $suggestionsService)
     {
         $this->invoicesService = $invoicesService;
+        $this->suggestionsService = $suggestionsService;
     }
 
     /**
@@ -116,5 +119,37 @@ class InvoicesController extends Controller
         $transactions = $this->invoicesService->getTransactions($invoiceId);
 
         return response()->json($transactions);
+    }
+
+    /**
+     * Lista sugestões de uma fatura específica
+     */
+    public function getSuggestions(string $invoiceId)
+    {
+        $suggestions = $this->suggestionsService->getByInvoice($invoiceId);
+        return response()->json($suggestions);
+    }
+
+    /**
+     * Cria uma nova sugestão para a fatura
+     */
+    public function createSuggestion(CreateSuggestionRequest $request, string $invoiceId)
+    {
+        $data = $request->validated();
+        $suggestion = $this->suggestionsService->create($invoiceId, $data);
+
+        return response()->json([
+            'message' => 'Sugestão criada com sucesso',
+            'data' => $suggestion
+        ], 201);
+    }
+
+    /**
+     * Estatísticas das sugestões por fatura
+     */
+    public function getSuggestionsStats(string $invoiceId)
+    {
+        $stats = $this->suggestionsService->getStatsByInvoice($invoiceId);
+        return response()->json($stats);
     }
 }

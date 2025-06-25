@@ -13,7 +13,7 @@ class CreateUser
 
         $user = User::create([
             ...$data,
-            'password' => bcrypt('000000')
+            'password' => \Hash::make($data['password']),
         ]);
 
         $user->assignRole($data['role']);

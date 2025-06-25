@@ -5,10 +5,12 @@ use App\Http\Controllers\Admin\AdminInvoicesController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Cards\CardsController;
 use App\Http\Controllers\Cards\RewardProgramsController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use App\Http\Controllers\Finance\AnalysisController;
 use App\Http\Controllers\Finance\BanksController;
 use App\Http\Controllers\Finance\CategoriesController;
 use App\Http\Controllers\Finance\InvoicesController;
+use App\Http\Controllers\Finance\SuggestionsController;
 use App\Http\Controllers\Finance\TransactionsController;
 use App\Http\Controllers\Users\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -56,10 +58,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('reward-programs', RewardProgramsController::class);
 
     // Faturas
+    Route::get('/invoices/{invoice}/suggestions', [SuggestionsController::class, 'getByInvoice']);
+    Route::post('/invoices/{invoice}/suggestions', [SuggestionsController::class, 'store']);
+    Route::get('/invoices/{invoice}/suggestions/stats', [SuggestionsController::class, 'getStatsByInvoice']);
     Route::post('/invoices/upload', [InvoicesController::class, 'upload']);
     Route::get('/invoices/{invoice}/transactions', [InvoicesController::class, 'getTransactions']);
     Route::get('/invoices/{invoice}/category-summary', [InvoicesController::class, 'getCategorySummary']);
     Route::apiResource('invoices', InvoicesController::class);
+
+    // Sugestões
+    Route::apiResource('suggestions', SuggestionsController::class);
 
     // Transações
     Route::get('/transactions/suggestions', [TransactionsController::class, 'suggestions']);
@@ -84,13 +92,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard
     Route::prefix('dashboard')->group(function () {
-        Route::get('/', [App\Http\Controllers\Dashboard\DashboardController::class, 'index']);
-        Route::get('/stats', [App\Http\Controllers\Dashboard\DashboardController::class, 'getStats']);
-        Route::get('/transactions', [App\Http\Controllers\Dashboard\DashboardController::class, 'getTransactions']);
-        Route::get('/points-programs', [App\Http\Controllers\Dashboard\DashboardController::class, 'getPointsPrograms']);
-        Route::get('/points-by-category', [App\Http\Controllers\Dashboard\DashboardController::class, 'getPointsByCategory']);
-        Route::get('/monthly-spent', [App\Http\Controllers\Dashboard\DashboardController::class, 'getMonthlySpent']);
-        Route::get('/recommendations', [App\Http\Controllers\Dashboard\DashboardController::class, 'getRecommendations']);
+        Route::get('/', [DashboardController::class, 'index']);
+        Route::get('/stats', [DashboardController::class, 'getStats']);
+        Route::get('/transactions', [DashboardController::class, 'getTransactions']);
+        Route::get('/points-programs', [DashboardController::class, 'getPointsPrograms']);
+        Route::get('/points-by-category', [DashboardController::class, 'getPointsByCategory']);
+        Route::get('/monthly-spent', [DashboardController::class, 'getMonthlySpent']);
+        Route::get('/recommendations', [DashboardController::class, 'getRecommendations']);
     });
 
     // Rotas administrativas (apenas para admins)
@@ -103,27 +111,21 @@ Route::middleware('auth:sanctum')->group(function () {
         // Faturas
         Route::prefix('invoices')->group(function () {
             // Usuários com faturas
-            Route::get('/users', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getUsers']);
-            Route::get('/users/{userId}/invoices', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getUserInvoices']);
+            Route::get('/users', [AdminInvoicesController::class, 'getUsers']);
+            Route::get('/users/{userId}/invoices', [AdminInvoicesController::class, 'getUserInvoices']);
 
             // Detalhes de faturas
-            Route::get('/{invoiceId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceDetails']);
-            Route::get('/{invoiceId}/transactions', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceTransactions']);
-            Route::get('/{invoiceId}/category-summary', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceCategorySummary']);
-
+            Route::get('/pending', [AdminController::class, 'getPendingInvoices']);
+            Route::get('/{invoiceId}', [AdminInvoicesController::class, 'getInvoiceDetails']);
+            Route::get('/{invoiceId}/transactions', [AdminInvoicesController::class, 'getInvoiceTransactions']);
+            Route::get('/{invoiceId}/category-summary', [AdminInvoicesController::class, 'getInvoiceCategorySummary']);
+            
             // Ações administrativas
-            Route::post('/{invoiceId}/reprocess', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'reprocessInvoice']);
-            Route::patch('/{invoiceId}/status', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'updateInvoiceStatus']);
-            Route::delete('/{invoiceId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'deleteInvoice']);
-
-            // Sugestões
-            Route::get('/{invoiceId}/suggestions', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoiceSuggestions']);
-            Route::post('/{invoiceId}/suggestions', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'createSuggestion']);
-            Route::put('/{invoiceId}/suggestions/{suggestionId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'updateSuggestion']);
-            Route::delete('/{invoiceId}/suggestions/{suggestionId}', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'deleteSuggestion']);
-
-            // Estatísticas
-            Route::get('/stats', [App\Http\Controllers\Admin\AdminInvoicesController::class, 'getInvoicesStats']);
+            Route::post('/{invoiceId}/reprocess', [AdminInvoicesController::class, 'reprocessInvoice']);
+            Route::patch('/{invoiceId}/status', [AdminInvoicesController::class, 'updateInvoiceStatus']);
+            Route::delete('/{invoiceId}', [AdminInvoicesController::class, 'deleteInvoice']);
+           // Estatísticas
+            Route::get('/stats', [AdminInvoicesController::class, 'getInvoicesStats']);
         });
 
         // Gestão de usuários
