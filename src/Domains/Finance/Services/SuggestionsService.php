@@ -2,6 +2,7 @@
 
 namespace Domains\Finance\Services;
 
+use Domains\Finance\Models\Invoice;
 use Domains\Finance\Models\Suggestion;
 use Illuminate\Support\Facades\DB;
 
@@ -59,7 +60,13 @@ class SuggestionsService
      */
     public function create(array $data)
     {
-        return Suggestion::create([...$data, 'created_by' => auth()->user()->id]);
+        $suggestion = Suggestion::create([...$data, 'created_by' => auth()->user()->id]);
+
+        Invoice::find($data['invoice_id'])->update([
+            'status' => 'Analisado'
+        ]);
+
+        return $suggestion;
     }
 
     /**
