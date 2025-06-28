@@ -59,7 +59,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Faturas
     Route::get('/invoices/{invoice}/suggestions', [SuggestionsController::class, 'getByInvoice']);
-    Route::post('/invoices/{invoice}/suggestions', [SuggestionsController::class, 'store']);
     Route::get('/invoices/{invoice}/suggestions/stats', [SuggestionsController::class, 'getStatsByInvoice']);
     Route::post('/invoices/upload', [InvoicesController::class, 'upload']);
     Route::get('/invoices/{invoice}/transactions', [InvoicesController::class, 'getTransactions']);
@@ -126,6 +125,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/{invoiceId}', [AdminInvoicesController::class, 'deleteInvoice']);
            // Estatísticas
             Route::get('/stats', [AdminInvoicesController::class, 'getInvoicesStats']);
+
+            Route::get('/{invoiceId}/suggestions', [AdminInvoicesController::class, 'getInvoiceSuggestions']);
+            Route::post('/{invoiceId}/suggestions', [AdminInvoicesController::class, 'createSuggestion']);
+            Route::put('/{invoiceId}/suggestions/{suggestionId}', [AdminInvoicesController::class, 'updateSuggestion']);
+            Route::delete('/{invoiceId}/suggestions/{suggestionId}', [AdminInvoicesController::class, 'deleteSuggestion']);
+            Route::get('/{invoiceId}/categories-for-suggestions', [AdminInvoicesController::class, 'getInvoiceCategoriesForSuggestions']);
+            Route::patch('/{invoiceId}/suggestions/{suggestionId}/toggle-status', [AdminInvoicesController::class, 'toggleSuggestionStatus']);
         });
 
         // Gestão de usuários

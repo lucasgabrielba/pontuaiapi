@@ -2,6 +2,8 @@
 
 namespace Domains\Finance\Models;
 
+use Domains\Finance\Models\Category;
+use Domains\Finance\Models\Invoice;
 use Domains\Shared\Traits\FiltersNullValues;
 use Domains\Users\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -15,24 +17,27 @@ class Suggestion extends Model
 
     protected $fillable = [
         'invoice_id',
-        'created_by',
+        'category_id',
+        'type',
         'title',
         'description',
-        'type',
-        'priority',
         'recommendation',
         'impact_description',
         'potential_points_increase',
+        'priority',
         'is_personalized',
         'applies_to_future',
-        'additional_data',
+        'is_active',
+        'created_by',
     ];
 
     protected $casts = [
         'is_personalized' => 'boolean',
         'applies_to_future' => 'boolean',
-        'additional_data' => 'array',
+        'is_active' => 'boolean',
     ];
+
+    protected $with = ['category', 'createdBy'];
 
     /**
      * Get the invoice that owns the suggestion.
@@ -43,72 +48,18 @@ class Suggestion extends Model
     }
 
     /**
+     * Get the category associated with the suggestion.
+     */
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
      * Get the user who created the suggestion.
      */
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
-    }
-
-    /**
-     * Scope para filtrar por tipo
-     */
-    public function scopeOfType($query, string $type)
-    {
-        return $query->where('type', $type);
-    }
-
-    /**
-     * Scope para filtrar por prioridade
-     */
-    public function scopeOfPriority($query, string $priority)
-    {
-        return $query->where('priority', $priority);
-    }
-
-    /**
-     * Scope para sugestões personalizadas
-     */
-    public function scopePersonalized($query)
-    {
-        return $query->where('is_personalized', true);
-    }
-
-    /**
-     * Scope para sugestões que se aplicam ao futuro
-     */
-    public function scopeAppliesToFuture($query)
-    {
-        return $query->where('applies_to_future', true);
-    }
-
-    /**
-     * Accessor para formatar o tipo para exibição
-     */
-    public function getTypeDisplayAttribute(): string
-    {
-        $types = [
-            'card_recommendation' => 'Recomendação de Cartão',
-            'merchant_recommendation' => 'Recomendação de Estabelecimento',
-            'category_optimization' => 'Otimização de Categoria',
-            'points_strategy' => 'Estratégia de Pontos',
-            'general_tip' => 'Dica Geral',
-        ];
-
-        return $types[$this->type] ?? $this->type;
-    }
-
-    /**
-     * Accessor para formatar a prioridade para exibição
-     */
-    public function getPriorityDisplayAttribute(): string
-    {
-        $priorities = [
-            'low' => 'Baixa',
-            'medium' => 'Média',
-            'high' => 'Alta',
-        ];
-
-        return $priorities[$this->priority] ?? $this->priority;
     }
 }

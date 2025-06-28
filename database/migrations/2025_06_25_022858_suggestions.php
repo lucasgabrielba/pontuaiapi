@@ -12,6 +12,7 @@ return new class extends Migration
             $table->ulid('id')->primary();
             $table->foreignUlid('invoice_id')->constrained()->onDelete('cascade');
             $table->foreignUlid('created_by')->constrained('users')->onDelete('cascade');
+            $table->foreignUlid('category_id')->nullable()->after('invoice_id')->constrained()->onDelete('set null');
             
             $table->string('title', 80);
             $table->text('description');

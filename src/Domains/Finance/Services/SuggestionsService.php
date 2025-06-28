@@ -2,8 +2,8 @@
 
 namespace Domains\Finance\Services;
 
-use Domains\Finance\Models\Invoice;
 use Domains\Finance\Models\Suggestion;
+use Domains\Finance\Models\Invoice;
 use Illuminate\Support\Facades\DB;
 
 class SuggestionsService

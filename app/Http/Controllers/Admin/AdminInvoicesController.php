@@ -15,9 +15,87 @@ class AdminInvoicesController extends Controller
         $this->adminInvoicesService = $adminInvoicesService;
     }
 
+    public function getInvoiceSuggestions(string $invoiceId)
+    {
+        $suggestions = $this->adminInvoicesService->getInvoiceSuggestions($invoiceId);
+        return response()->json($suggestions);
+    }
+
     /**
-     * Obter lista de usuários com informações de faturas
+     * Create a new suggestion for an invoice
      */
+    public function createSuggestion(Request $request, string $invoiceId)
+    {
+        $validatedData = $request->validate([
+            'category_id' => 'nullable|string|exists:categories,id',
+            'type' => 'required|string|in:card_recommendation,merchant_recommendation,category_optimization,points_strategy,general_tip',
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'recommendation' => 'required|string',
+            'impact_description' => 'nullable|string',
+            'potential_points_increase' => 'nullable|string',
+            'priority' => 'required|string|in:low,medium,high',
+            'is_personalized' => 'boolean',
+            'applies_to_future' => 'boolean',
+        ]);
+
+        $suggestion = $this->adminInvoicesService->createSuggestion($invoiceId, $validatedData);
+
+        return response()->json($suggestion, 201);
+    }
+
+    /**
+     * Update an existing suggestion
+     */
+    public function updateSuggestion(Request $request, string $invoiceId, string $suggestionId)
+    {
+        $validatedData = $request->validate([
+            'category_id' => 'nullable|string|exists:categories,id',
+            'type' => 'sometimes|string|in:card_recommendation,merchant_recommendation,category_optimization,points_strategy,general_tip',
+            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|string',
+            'recommendation' => 'sometimes|string',
+            'impact_description' => 'nullable|string',
+            'potential_points_increase' => 'nullable|string',
+            'priority' => 'sometimes|string|in:low,medium,high',
+            'is_personalized' => 'boolean',
+            'applies_to_future' => 'boolean',
+            'is_active' => 'boolean',
+        ]);
+
+        $this->adminInvoicesService->updateSuggestion($suggestionId, $validatedData);
+
+        return response()->json(['message' => 'Sugestão atualizada com sucesso']);
+    }
+
+    /**
+     * Delete a suggestion
+     */
+    public function deleteSuggestion(string $invoiceId, string $suggestionId)
+    {
+        $this->adminInvoicesService->deleteSuggestion($suggestionId);
+
+        return response()->json(['message' => 'Sugestão deletada com sucesso'], 204);
+    }
+
+    /**
+     * Get invoice categories for category-based suggestions
+     */
+    public function getInvoiceCategoriesForSuggestions(string $invoiceId)
+    {
+        $categories = $this->adminInvoicesService->getInvoiceCategoriesForSuggestions($invoiceId);
+        return response()->json($categories);
+    }
+
+    /**
+     * Toggle suggestion active status
+     */
+    public function toggleSuggestionStatus(string $invoiceId, string $suggestionId)
+    {
+        $suggestion = $this->adminInvoicesService->toggleSuggestionStatus($suggestionId);
+        return response()->json($suggestion);
+    }
+
     public function getUsers(Request $request)
     {
         $filters = $request->all();
@@ -112,70 +190,4 @@ class AdminInvoicesController extends Controller
         ], 204);
     }
 
-    /**
-     * Obter sugestões de uma fatura
-     */
-    public function getInvoiceSuggestions(string $invoiceId)
-    {
-        $suggestions = $this->adminInvoicesService->getInvoiceSuggestions($invoiceId);
-        return response()->json($suggestions);
-    }
-
-    /**
-     * Criar nova sugestão para uma fatura
-     */
-    public function createSuggestion(Request $request, string $invoiceId)
-    {
-        $request->validate([
-            'type' => 'required|string|in:card_recommendation,merchant_recommendation,category_optimization,points_strategy,general_tip',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'recommendation' => 'required|string',
-            'impact_description' => 'nullable|string',
-            'potential_points_increase' => 'nullable|string',
-            'priority' => 'required|string|in:low,medium,high',
-            'is_personalized' => 'required|boolean',
-            'applies_to_future' => 'required|boolean'
-        ]);
-
-        $suggestion = $this->adminInvoicesService->createSuggestion($invoiceId, $request->validated());
-
-        return response()->json($suggestion, 201);
-    }
-
-    /**
-     * Atualizar uma sugestão existente
-     */
-    public function updateSuggestion(Request $request, string $invoiceId, string $suggestionId)
-    {
-        $request->validate([
-            'type' => 'sometimes|string|in:card_recommendation,merchant_recommendation,category_optimization,points_strategy,general_tip',
-            'title' => 'sometimes|string|max:255',
-            'description' => 'sometimes|string',
-            'recommendation' => 'sometimes|string',
-            'impact_description' => 'nullable|string',
-            'potential_points_increase' => 'nullable|string',
-            'priority' => 'sometimes|string|in:low,medium,high',
-            'is_personalized' => 'sometimes|boolean',
-            'applies_to_future' => 'sometimes|boolean'
-        ]);
-
-        $this->adminInvoicesService->updateSuggestion($invoiceId, $suggestionId, $request->validated());
-
-        return response()->json([
-            'message' => 'Sugestão atualizada com sucesso'
-        ]);
-    }
-
-    /**
-     * Deletar uma sugestão
-     */
-    public function deleteSuggestion(string $invoiceId, string $suggestionId)
-    {
-        $this->adminInvoicesService->deleteSuggestion($invoiceId, $suggestionId);
-
-        return response()->json([
-            'message' => 'Sugestão deletada com sucesso'
-        ], 204);
-    }
 }

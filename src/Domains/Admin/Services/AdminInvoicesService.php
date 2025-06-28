@@ -2,38 +2,142 @@
 
 namespace Domains\Admin\Services;
 
+use Domains\Finance\Models\Suggestion;
 use Domains\Finance\Jobs\ProcessInvoiceJob;
 use Domains\Finance\Models\Invoice;
 use Domains\Finance\Models\Transaction;
+use Domains\Shared\Helpers\ListDataHelper;
 use Domains\Users\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class AdminInvoicesService
 {
+
+    public function getInvoiceSuggestions(string $invoiceId): array
+    {
+        $suggestions = Suggestion::where('invoice_id', $invoiceId)
+            ->with(['category', 'createdBy'])
+            ->orderBy('priority', 'desc')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $suggestions->toArray();
+    }
+
     /**
-     * Obter lista de usuários com informações de faturas
+     * Create a new suggestion for an invoice
      */
+    public function createSuggestion(string $invoiceId, array $data): Suggestion
+    {
+        // Validate invoice exists
+        $invoice = Invoice::findOrFail($invoiceId);
+
+        $data['invoice_id'] = $invoiceId;
+        $data['created_by'] = auth()->id();
+
+        return Suggestion::create($data);
+    }
+
+    /**
+     * Update an existing suggestion
+     */
+    public function updateSuggestion(string $suggestionId, array $data): void
+    {
+        $suggestion = Suggestion::findOrFail($suggestionId);
+        $suggestion->update($data);
+    }
+
+    /**
+     * Delete a suggestion
+     */
+    public function deleteSuggestion(string $suggestionId): void
+    {
+        $suggestion = Suggestion::findOrFail($suggestionId);
+        $suggestion->delete();
+    }
+
+    /**
+     * Get invoice categories with spending data for category-based suggestions
+     */
+    public function getInvoiceCategoriesForSuggestions(string $invoiceId): array
+    {
+        $invoice = Invoice::findOrFail($invoiceId);
+
+        $categories = DB::table('transactions')
+            ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
+            ->select(
+                'categories.id',
+                'categories.name',
+                'categories.icon',
+                'categories.color',
+                DB::raw('SUM(transactions.amount) as total_amount'),
+                DB::raw('COUNT(transactions.id) as transaction_count'),
+                DB::raw('SUM(transactions.points_earned) as total_points')
+            )
+            ->where('transactions.invoice_id', $invoiceId)
+            ->whereNotNull('categories.id') // Only categories that exist
+            ->groupBy('categories.id', 'categories.name', 'categories.icon', 'categories.color')
+            ->orderBy('total_amount', 'desc')
+            ->get();
+
+        // Format the data for frontend consumption
+        return $categories->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'icon' => $category->icon,
+                'color' => $category->color,
+                'total_amount' => $category->total_amount,
+                'total_amount_formatted' => 'R$ ' . number_format($category->total_amount / 100, 2, ',', '.'),
+                'transaction_count' => $category->transaction_count,
+                'total_points' => $category->total_points,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Toggle suggestion active status
+     */
+    public function toggleSuggestionStatus(string $suggestionId): Suggestion
+    {
+        $suggestion = Suggestion::findOrFail($suggestionId);
+        $suggestion->update(['is_active' => !$suggestion->is_active]);
+
+        return $suggestion->fresh();
+    }
+
+    /**
+     * Get all suggestions with filtering and pagination
+     */
+    public function listSuggestions(array $filters): \Illuminate\Pagination\LengthAwarePaginator
+    {
+        $helper = new ListDataHelper(new Suggestion());
+        return $helper->list($filters);
+    }
+
     public function getUsers(array $filters): array
     {
         $query = User::select([
             'id',
-            'name', 
+            'name',
             'email',
             'created_at',
             'status'
         ])
-        ->withCount('invoices')
-        ->with(['invoices' => function($query) {
-            $query->latest()->take(1)->select('user_id', 'created_at');
-        }]);
+            ->withCount('invoices')
+            ->with([
+                'invoices' => function ($query) {
+                    $query->latest()->take(1)->select('user_id', 'created_at');
+                }
+            ]);
 
         // Filtros
         if (isset($filters['search'])) {
             $search = $filters['search'];
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'ILIKE', "%{$search}%")
-                  ->orWhere('email', 'ILIKE', "%{$search}%");
+                    ->orWhere('email', 'ILIKE', "%{$search}%");
             });
         }
 
@@ -61,7 +165,7 @@ class AdminInvoicesService
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Processar dados
-        $users = $paginated->getCollection()->map(function($user) {
+        $users = $paginated->getCollection()->map(function ($user) {
             return [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -102,7 +206,7 @@ class AdminInvoicesService
         // Filtros
         if (isset($filters['search'])) {
             $search = $filters['search'];
-            $query->whereHas('card', function($q) use ($search) {
+            $query->whereHas('card', function ($q) use ($search) {
                 $q->where('name', 'ILIKE', "%{$search}%");
             });
         }
@@ -131,7 +235,7 @@ class AdminInvoicesService
         $paginated = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Processar dados
-        $invoices = $paginated->getCollection()->map(function($invoice) {
+        $invoices = $paginated->getCollection()->map(function ($invoice) {
             return [
                 'id' => $invoice->id,
                 'card_name' => $invoice->card->name,
@@ -242,7 +346,7 @@ class AdminInvoicesService
             ->get();
 
         // Processar dados para "Sem categoria"
-        return $summary->map(function($item) {
+        return $summary->map(function ($item) {
             if ($item->id === null) {
                 $item->name = 'Sem categoria';
                 $item->icon = 'help-circle';
@@ -290,7 +394,7 @@ class AdminInvoicesService
     public function updateInvoiceStatus(string $invoiceId, string $status): void
     {
         $invoice = Invoice::findOrFail($invoiceId);
-        
+
         $invoice->update(['status' => $status]);
 
         Log::info('Status da fatura atualizado manualmente', [
@@ -309,7 +413,7 @@ class AdminInvoicesService
         $totalInvoices = Invoice::count();
         $totalUsers = User::has('invoices')->count();
         $totalAmount = Invoice::sum('total_amount');
-        
+
         $statusStats = Invoice::select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status')
@@ -333,7 +437,7 @@ class AdminInvoicesService
     public function deleteInvoice(string $invoiceId): void
     {
         $invoice = Invoice::findOrFail($invoiceId);
-        
+
         Log::info('Fatura deletada pelo admin', [
             'invoice_id' => $invoiceId,
             'user_id' => $invoice->user_id,
@@ -343,74 +447,4 @@ class AdminInvoicesService
         $invoice->delete();
     }
 
-    /**
-     * Obter sugestões de uma fatura (mock data para demonstração)
-     */
-    public function getInvoiceSuggestions(string $invoiceId): array
-    {
-        // Em um cenário real, isso viria de uma tabela de sugestões
-        return [
-            [
-                'id' => '1',
-                'type' => 'card_recommendation',
-                'title' => 'Recomendação de Cartão',
-                'description' => 'Para maximizar pontos em supermercados',
-                'recommendation' => 'Use o Cartão XYZ para gastos em supermercados',
-                'priority' => 'high',
-                'status' => 'active'
-            ],
-            [
-                'id' => '2',
-                'type' => 'merchant_recommendation',
-                'title' => 'Recomendação de Estabelecimento',
-                'description' => 'Mude para estabelecimentos parceiros',
-                'recommendation' => 'Supermercado ABC oferece 3x mais pontos',
-                'priority' => 'medium',
-                'status' => 'active'
-            ]
-        ];
-    }
-
-    /**
-     * Criar nova sugestão para uma fatura (mock)
-     */
-    public function createSuggestion(string $invoiceId, array $data): array
-    {
-        // Em um cenário real, isso salvaria na tabela de sugestões
-        Log::info('Sugestão criada', [
-            'invoice_id' => $invoiceId,
-            'suggestion_data' => $data,
-            'admin_user_id' => auth()->id()
-        ]);
-
-        return array_merge($data, [
-            'id' => uniqid(),
-            'created_at' => now()->toISOString()
-        ]);
-    }
-
-    /**
-     * Atualizar uma sugestão existente (mock)
-     */
-    public function updateSuggestion(string $invoiceId, string $suggestionId, array $data): void
-    {
-        Log::info('Sugestão atualizada', [
-            'invoice_id' => $invoiceId,
-            'suggestion_id' => $suggestionId,
-            'suggestion_data' => $data,
-            'admin_user_id' => auth()->id()
-        ]);
-    }
-
-    /**
-     * Deletar uma sugestão (mock)
-     */
-    public function deleteSuggestion(string $invoiceId, string $suggestionId): void
-    {
-        Log::info('Sugestão deletada', [
-            'invoice_id' => $invoiceId,
-            'suggestion_id' => $suggestionId,
-            'admin_user_id' => auth()->id()
-        ]);
-    }
 }
